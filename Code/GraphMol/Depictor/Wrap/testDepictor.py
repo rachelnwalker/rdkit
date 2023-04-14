@@ -715,27 +715,27 @@ M  END)""")
             assert self.molMatchesTemplate(mol, default_template)
 
     def testSetBadRingSystemTemplates(self):
-        with tempfile.NamedTemporaryFile() as tmp_file:
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
             tmp_file.write(b"invalidsmiles")
             tmp_file.seek(0)
             with self.assertRaises(ValueError):
                 rdDepictor.SetRingSystemTemplates(tmp_file.name)
 
-        with tempfile.NamedTemporaryFile() as tmp_file:
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
             # not a ring system
             tmp_file.write(b"C |(-0.5537,-3.1595)|")
             tmp_file.seek(0)
             with self.assertRaises(ValueError):
                 rdDepictor.SetRingSystemTemplates(tmp_file.name)
 
-        with tempfile.NamedTemporaryFile() as tmp_file:
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
             # no coordinates
             tmp_file.write(b"C1CCCCC1")
             tmp_file.seek(0)
             with self.assertRaises(ValueError):
                 rdDepictor.SetRingSystemTemplates(tmp_file.name)
 
-        with tempfile.NamedTemporaryFile() as tmp_file:
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
             # bridged ring system
             tmp_file.write(b"c1ccccc1-c1ccccc1")
             tmp_file.seek(0)
@@ -756,7 +756,7 @@ M  END)""")
             rdDepictor.Compute2DCoords(mol, useRingTemplates=True)
             assert self.molMatchesTemplate(mol, default_template)
 
-            with tempfile.NamedTemporaryFile() as tmp_file:
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                 tmp_file.write(new_template_smi.encode('utf-8'))
                 tmp_file.seek(0)
                 rdDepictor.AddRingSystemTemplates(tmp_file.name)
