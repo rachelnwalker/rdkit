@@ -331,7 +331,7 @@ BOOST_PYTHON_MODULE(rdDistGeom) {
  \n\
  ARGUMENTS:\n\n\
     - mol : the molecule of interest\n\
-    - maxAttempts : the maximum number of attempts to try embedding \n\
+    - maxAttempts : maximum number of embedding attempts to use for a single conformation \n\
     - randomSeed : provide a seed for the random number generator \n\
                    so that the same coordinates can be obtained \n\
                    for a molecule on multiple runs. If -1, the \n\
@@ -367,7 +367,7 @@ BOOST_PYTHON_MODULE(rdDistGeom) {
     - useMacrocycle14config : use the 1-4 distance bounds from ETKDGv3\n\
 \n\
  RETURNS:\n\n\
-    ID of the new conformation added to the molecule \n\
+    ID of the new conformation added to the molecule or -1 if the embedding fails.\n\
 \n";
   python::def(
       "EmbedMolecule", RDKit::EmbedMolecule,
@@ -394,7 +394,7 @@ BOOST_PYTHON_MODULE(rdDistGeom) {
  ARGUMENTS:\n\n\
   - mol : the molecule of interest\n\
   - numConfs : the number of conformers to generate \n\
-  - maxAttempts : the maximum number of attempts to try embedding \n\
+  - maxAttempts : maximum number of embedding attempts to use for a single conformation \n\
   - randomSeed : provide a seed for the random number generator \n\
                  so that the same coordinates can be obtained \n\
                  for a molecule on multiple runs. If -1, the \n\
@@ -611,7 +611,7 @@ BOOST_PYTHON_MODULE(rdDistGeom) {
     - params : an EmbedParameters object \n\
 \n\
  RETURNS:\n\n\
-    ID of the new conformation added to the molecule \n\
+    ID of the new conformation added to the molecule or -1 if the embedding fails. \n\
 \n";
   python::def("EmbedMolecule", RDKit::EmbedMolecule2,
               (python::arg("mol"), python::arg("params")), docString.c_str());
