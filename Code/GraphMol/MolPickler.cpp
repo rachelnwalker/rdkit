@@ -34,7 +34,7 @@ using std::uint32_t;
 namespace RDKit {
 
 const int32_t MolPickler::versionMajor = 16;
-const int32_t MolPickler::versionMinor = 2;
+const int32_t MolPickler::versionMinor = 3;
 const int32_t MolPickler::versionPatch = 0;
 const int32_t MolPickler::endianId = 0xDEADBEEF;
 
@@ -904,6 +904,10 @@ void pickleAtomMonomerInfo(std::ostream &ss, const AtomMonomerInfo *info) {
   PRECONDITION(info, "no info");
   streamWrite(ss, info->getName());
   streamWrite(ss, static_cast<unsigned int>(info->getMonomerType()));
+  streamWrite(ss, info->getResidueName());
+  streamWrite(ss, info->getResidueNumber());
+  streamWrite(ss, info->getChainId());
+  streamWrite(ss, info->getMonomerClass());
   switch (info->getMonomerType()) {
     case AtomMonomerInfo::UNKNOWN:
     case AtomMonomerInfo::OTHER:
@@ -925,6 +929,19 @@ AtomMonomerInfo *unpickleAtomMonomerInfo(std::istream &ss, int version) {
   unsigned int typ;
   streamRead(ss, typ, version);
 
+  std::string residueName;
+  int residueNumber = 0;
+  std::string chainId;
+  std::string monomerClass;
+
+  // Read the new fields for version 16.3+
+  if (version >= 16003) {
+    streamRead(ss, residueName, version);
+    streamRead(ss, residueNumber, version);
+    streamRead(ss, chainId, version);
+    streamRead(ss, monomerClass, version);
+  }
+
   AtomMonomerInfo *res;
   switch (typ) {
     case AtomMonomerInfo::UNKNOWN:
@@ -934,11 +951,13 @@ AtomMonomerInfo *unpickleAtomMonomerInfo(std::istream &ss, int version) {
         throw MolPicklerException(
             "did not find expected end of atom monomer info");
       }
-      res =
-          new AtomMonomerInfo(RDKit::AtomMonomerInfo::AtomMonomerType(typ), nm);
+      res = new AtomMonomerInfo(RDKit::AtomMonomerInfo::AtomMonomerType(typ), nm,
+                                residueName, residueNumber, chainId, monomerClass);
       break;
     case AtomMonomerInfo::PDBRESIDUE:
-      res = static_cast<AtomMonomerInfo *>(new AtomPDBResidueInfo(nm));
+      res = static_cast<AtomMonomerInfo *>(
+          new AtomPDBResidueInfo(nm, 0, "", residueName, residueNumber, chainId,
+                                 "", 1.0, 0.0, false, 0, 0, monomerClass));
       unpickleAtomPDBResidueInfo(ss, static_cast<AtomPDBResidueInfo *>(res),
                                  version);
       break;
