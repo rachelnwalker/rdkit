@@ -13,3 +13,6 @@ rdkit_catch_test(testMonomerMol testMonomerMol.cpp
 rdkit_catch_test(testMonomerLibrary testMonomerLibrary.cpp
     LINK_LIBRARIES MonomerMol FileParsers SmilesParse GraphMol)
 
+rdkit_catch_test(testSCSRConversion testSCSRConversion.cpp
+    LINK_LIBRARIES MonomerMol FileParsers SmilesParse GraphMol)
+
