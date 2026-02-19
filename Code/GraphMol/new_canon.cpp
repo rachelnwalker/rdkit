@@ -16,6 +16,8 @@
 #include <algorithm>
 #include <cstring>
 #include <cassert>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 // #define VERBOSE_CANON 1
 
@@ -152,15 +154,10 @@ void compareRingAtomsConcerningNumNeighbors(Canon::canon_atom *atoms,
   PRECONDITION(atoms, "bad pointer");
   RingInfo *ringInfo = mol.getRingInfo();
 
-  std::vector<char> visited(nAtoms);
-  std::vector<char> lastLevelNbrs(nAtoms);
-  std::vector<char> currentLevelNbrs(nAtoms);
-  std::vector<int> revisitedNeighbors(nAtoms);
-
-  // Sparse index tracking vectors to avoid O(n) scans
-  std::vector<int> visitedIndices;
-  std::vector<int> lastLevelIndices;
-  std::vector<int> modifiedRevisited;
+  std::unordered_set<int> visited;
+  std::unordered_set<int> lastLevelNbrs;
+  std::unordered_set<int> currentLevelNbrs;
+  std::unordered_map<int, int> revisitedNeighbors;
 
   for (unsigned idx = 0; idx < nAtoms; ++idx) {
     const Canon::canon_atom &a = atoms[idx];
@@ -174,21 +171,14 @@ void compareRingAtomsConcerningNumNeighbors(Canon::canon_atom *atoms,
     atoms[idx].neighborNum.reserve(1000);
     atoms[idx].revistedNeighbors.assign(1000, 0);
 
-    // Sparse reset from previous atom's BFS
-    for (int i : visitedIndices) {
-      visited[i] = 0;
-    }
-    visitedIndices.clear();
-    for (int i : lastLevelIndices) {
-      lastLevelNbrs[i] = 0;
-    }
-    // currentLevelNbrs and revisitedNeighbors are reset within the BFS loop
-    lastLevelIndices.clear();
+    visited.clear();
+    lastLevelNbrs.clear();
 
     std::vector<int> nextLevelNbrs;
     while (!neighbors.empty()) {
       unsigned int numLevelNbrs = 0;
       nextLevelNbrs.resize(0);
+      currentLevelNbrs.clear();
       while (!neighbors.empty()) {
         int nidx = neighbors.front();
         neighbors.pop_front();
@@ -197,53 +187,34 @@ void compareRingAtomsConcerningNumNeighbors(Canon::canon_atom *atoms,
             ringInfo->numAtomRings(atom.atom->getIdx()) < 1) {
           continue;
         }
-        lastLevelNbrs[nidx] = 1;
-        lastLevelIndices.push_back(nidx);
-        visited[nidx] = 1;
-        visitedIndices.push_back(nidx);
+        lastLevelNbrs.insert(nidx);
+        visited.insert(nidx);
         for (unsigned int j = 0; j < atom.degree; j++) {
           int iidx = atom.nbrIds[j];
-          if (!visited[iidx]) {
-            currentLevelNbrs[iidx] = 1;
+          if (visited.find(iidx) == visited.end()) {
+            currentLevelNbrs.insert(iidx);
             numLevelNbrs++;
-            visited[iidx] = 1;
-            visitedIndices.push_back(iidx);
+            visited.insert(iidx);
             nextLevelNbrs.push_back(iidx);
           }
         }
       }
-      // Use sparse iteration over nextLevelNbrs instead of O(n) scan
-      for (int i : nextLevelNbrs) {
+      revisitedNeighbors.clear();
+      for (int i : currentLevelNbrs) {
         const Canon::canon_atom &natom = atoms[i];
         for (unsigned int k = 0; k < natom.degree; k++) {
           int jidx = natom.nbrIds[k];
-          if (currentLevelNbrs[jidx] || lastLevelNbrs[jidx]) {
-            if (revisitedNeighbors[jidx] == 0) {
-              modifiedRevisited.push_back(jidx);
-            }
+          if (currentLevelNbrs.count(jidx) || lastLevelNbrs.count(jidx)) {
             revisitedNeighbors[jidx] += 1;
           }
         }
       }
-      // Sparse reset of lastLevelNbrs
-      for (int i : lastLevelIndices) {
-        lastLevelNbrs[i] = 0;
-      }
-      lastLevelIndices.clear();
-      // Copy current to last using sparse indices
-      for (int i : nextLevelNbrs) {
-        lastLevelNbrs[i] = 1;
-        lastLevelIndices.push_back(i);
-      }
-      // Sparse reset of currentLevelNbrs
-      for (int i : nextLevelNbrs) {
-        currentLevelNbrs[i] = 0;
-      }
+      lastLevelNbrs = currentLevelNbrs;
+
       std::vector<int> tmp;
       tmp.reserve(30);
-      // Use sparse iteration over modifiedRevisited instead of O(n) scan
-      for (int i : modifiedRevisited) {
-        tmp.push_back(revisitedNeighbors[i]);
+      for (const auto &pair : revisitedNeighbors) {
+        tmp.push_back(pair.second);
       }
       std::sort(tmp.begin(), tmp.end());
       tmp.push_back(-1);
@@ -255,11 +226,6 @@ void compareRingAtomsConcerningNumNeighbors(Canon::canon_atom *atoms,
         atoms[idx].revistedNeighbors[currentRNIdx] = i;
         currentRNIdx++;
       }
-      // Sparse reset of revisitedNeighbors
-      for (int i : modifiedRevisited) {
-        revisitedNeighbors[i] = 0;
-      }
-      modifiedRevisited.clear();
 
       atoms[idx].neighborNum.push_back(numLevelNbrs);
       atoms[idx].neighborNum.push_back(-1);
