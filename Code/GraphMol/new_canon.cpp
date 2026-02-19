@@ -154,6 +154,7 @@ void compareRingAtomsConcerningNumNeighbors(Canon::canon_atom *atoms,
   PRECONDITION(atoms, "bad pointer");
   RingInfo *ringInfo = mol.getRingInfo();
 
+  // Use hash containers to avoid O(nAtoms) scans and clears
   std::unordered_set<int> visited;
   std::unordered_set<int> lastLevelNbrs;
   std::unordered_set<int> currentLevelNbrs;
