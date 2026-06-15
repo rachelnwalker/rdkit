@@ -610,6 +610,10 @@ unsigned int compute2DCoords(RDKit::ROMol &mol,
       eri.randomSampleFlipsAndPermutations(
           params.nFlipsPerSample, params.nSamples, params.sampleSeed, nullptr,
           0.0, params.permuteDeg4Nodes);
+    } else if (params.useRingTemplates) {
+      // SPECIAL PATCH - fix collisions in ring systems joined by spiro, but hide under the useRingTemplates
+      // to not impact the typical Compute2DCoords workflow.
+      eri.removeCollisionsBondAndSpiroFlip();
     } else {
       eri.removeCollisionsBondFlip();
     }
